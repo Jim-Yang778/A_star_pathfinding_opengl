@@ -44,6 +44,7 @@ void draw_cube_normal(const renderer_t &renderer,
                 const glm::mat4 &model,
                 const glm::mat4 &view,
                 const glm::vec3 &lightPos,
+                      const glm::vec3 &viewPos,
                 const model_t &m) {
 
     shader.setMat4("model", model);
@@ -51,6 +52,7 @@ void draw_cube_normal(const renderer_t &renderer,
     shader.setMat4("projection", renderer.projection);
 
     for (const mesh_t &mesh: m.meshes) {
+        shader.setVec3("viewPos", viewPos);
         shader.setVec3("lightPos", lightPos);
         shader.setVec3("lightColor", glm::vec3(1, 1, 1));
         shader.setVec3("objectColor", glm::vec3(1, 0.35, 0.2));

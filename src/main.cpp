@@ -166,7 +166,7 @@ int main()
 //    glBindBuffer(GL_ARRAY_BUFFER, 0);
 //    glBindVertexArray(0);
 
-    model_t cube = generate_cube(1, 0.5, 3, false, "res/textures/awesomeface.png");
+    model_t cube = generate_cube(1, 1, 1, false, "res/textures/awesomeface.png");
     model_t light_cube = generate_cube(1, 1, 1, false, "");
 
 //    GLuint texture1;
@@ -220,7 +220,10 @@ int main()
         renderer.projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
         // 模型矩阵
         glm::mat4 model = glm::mat4(1.0f);
-        draw_cube_normal(renderer, ourShader, model, view, lightPos, cube);
+        draw_cube_normal(renderer, ourShader, model, view, lightPos, camera.Position, cube);
+
+        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
         lightCubeShader.use(); // 用了别的shader别忘了改use
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);

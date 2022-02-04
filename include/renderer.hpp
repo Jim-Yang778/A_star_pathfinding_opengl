@@ -38,6 +38,7 @@ void draw_cube_normal(const renderer_t &renderer,
                       const glm::mat4 &model,
                       const glm::mat4 &view,
                       const glm::vec3 &lightPos,
+                      const glm::vec3 &viewPos,
                       const model_t &m);
 
 #endif //LEARN_OPENGL_RENDERER_HPP
