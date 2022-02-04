@@ -30,7 +30,7 @@ copy_resources(${CMAKE_CURRENT_LIST_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/r
 
 
 set(ACTIVITY app)
-add_executable(${ACTIVITY})
+add_executable(${ACTIVITY} include/shader.hpp include/camera.hpp include/model.hpp src/model.cpp include/file_utils.hpp include/renderer.hpp src/renderer.cpp include/map.hpp)
 target_include_directories(${ACTIVITY} PUBLIC include)
 target_sources(${ACTIVITY}
         ${target}
