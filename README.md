@@ -20,7 +20,7 @@
 2. 冯氏光照模型
 3. 多光源：Y轴方向直线光 + 两个点光源
 
-![](E:\CLion Project\learn_opengl\res\file_ext\aStar.gif)
+<img src="/res/file_ext/aStar.gif"/>
 
 
 
