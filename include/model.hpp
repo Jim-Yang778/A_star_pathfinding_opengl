@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include <tiny_obj_loader.h>
+
 /*
  * 本文件创建立体模型cube, sphere
  * 并完成顶点着色器部分的装载(?)
@@ -25,12 +27,16 @@ struct mesh_t {
     GLuint vao;
     GLuint vbo;
     GLuint nverts;
+    int material_id;
 };
 
 struct material_t {
     glm::vec4 color;
     GLuint diffuse_map = 0;
     GLuint specular_map = 0;
+    glm::vec3 diffuse = {1,1,1};
+    glm::vec3 specular = {1,1,1};
+    glm::vec3 emissive = {1,1,1};
 };
 
 struct model_t {
@@ -64,6 +70,8 @@ model_t generate_cube(const volume_param_t &geo_params,
                       glm::vec4 color = {1, 1, 1, 1});
 model_t generate_sphere(const sphere_param_t &geo_params,
                         glm::vec4 color = {1, 1, 1, 1});
+
+model_t load_obj(const std::string &path);
 
 void destroy_obj(model_t &m);
 

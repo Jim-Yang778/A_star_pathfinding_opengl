@@ -15,9 +15,14 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum Camera_Mode {
+    FLY_MODE = 1,
+    FPS_MODE = 2
+};
+
 // Default camera values
-const float YAW         = -90.0f;
-const float PITCH       =  0.0f;
+const float YAW         =  -89.0f;
+const float PITCH       =  -89.0f;
 const float SPEED       =  2.5f;
 const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
@@ -39,6 +44,7 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    Camera_Mode Mode = FLY_MODE;
 
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -76,6 +82,9 @@ public:
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
+        if (Mode == FPS_MODE) {
+            Position.y = 1.0f;
+        }
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

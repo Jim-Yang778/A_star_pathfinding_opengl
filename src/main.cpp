@@ -22,7 +22,7 @@ void run_aStar();
 // settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
-Camera camera(glm::vec3(float(WIDTH) / 2, float(LENGTH) / 2, 20.0f));
+Camera camera(glm::vec3(float(WIDTH) / 2, 25.0f, float(LENGTH) / 2));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -31,7 +31,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-std::vector<glm::vec3> lightPos{glm::vec3(WIDTH / 2, LENGTH, 5.0f), glm::vec3(0)};
+std::vector<glm::vec3> lightPos{glm::vec3(WIDTH / 2, 3.0f, LENGTH), glm::vec3(0)};
 
 int main()
 {
@@ -95,15 +95,15 @@ int main()
     model_t visited_cube = generate_cube({0.49f, 0.49f, 0.49f},
                                       false,
                                       {},
-                                      glm::vec4(0, 0.8, 0.5, 1));
+                                      glm::vec4(1, 0.31, 0, 1));
     model_t road_cube = generate_cube({0.49f, 0.49f, 0.49f},
                                          false,
                                          {},
-                                         glm::vec4(1, 0.0, 0.0, 1));
+                                         glm::vec4(0.3, 0.3, 0.3, 1));
     model_t start_cube = generate_cube({0.49f, 0.49f, 0.49f},
                                       false,
                                       {},
-                                      glm::vec4());
+                                      glm::vec4(0, 0, 0, 1));
     model_t end_cube = generate_cube({0.49f, 0.49f, 0.49f},
                                       false,
                                       {},
@@ -113,7 +113,8 @@ int main()
     model_t light_cube = generate_cube({0.49f, 0.49f, 0.49f},
                                          false,
                                          {},
-                                         glm::vec4(1, 0.4, 0.8, 1));
+                                         glm::vec4(0,0.67,0.41, 1));
+    model_t bicycle = load_obj("res/obj/Bicycle/10489_bicycle_L2.obj");
 
     renderer_t renderer = make_renderer(glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f));
     std::thread th(run_aStar);
@@ -130,6 +131,20 @@ int main()
         // -----
         processInput(window);
 
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            camera.Position = glm::vec3{0, 20, 0};
+            camera.Yaw = -89.0f;
+            camera.Pitch = -89.0f;
+            camera.Mode = FLY_MODE;
+        }
+        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+            auto start = instance.getStart();
+            camera.Position = glm::vec3{start.first - 1, 1, start.second};
+            camera.Yaw = 2.29f;
+            camera.Pitch = -3.39f;
+            camera.Mode = FPS_MODE;
+        }
+
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -141,11 +156,12 @@ int main()
         // 模型矩阵
         glm::mat4 model = glm::mat4(1.0f);
 
+
         for (size_t i = 0; i < LENGTH; ++i) {
             for (size_t j = 0; j < WIDTH; ++j) {
                 // calculate the model matrix for each object and pass it to shader before drawing
                 model = glm::mat4(1.0f);
-                glm::vec3 cubePositions{i, j, 0};
+                glm::vec3 cubePositions{i, 0, j};
                 model = glm::translate(model, cubePositions);
                 switch (instance.data()[i][j]->type) {
                     case Map::ROAD_UNVISITED: {
@@ -162,8 +178,8 @@ int main()
                     }
                     case Map::START: {
                         glm::mat4 tmp = model;
-                        tmp = glm::translate(tmp, glm::vec3(0, 0, 1.0f));
-                        lightPos[1] = cubePositions + glm::vec3(0, 0, 1.0f);
+                        tmp = glm::translate(tmp, glm::vec3(0, 1.0f, 0));
+                        lightPos[1] = cubePositions + glm::vec3(0, 1.0f, 0);
                         tmp = glm::scale(tmp, glm::vec3(0.4f));
                         draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, start_cube);
                         draw_light(renderer, lightCubeShader, tmp, view, light_cube);
@@ -171,10 +187,16 @@ int main()
                     }
                     case Map::END: {
                         draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, end_cube);
+                        glm::mat4 tmp = model;
+                        tmp = glm::translate(tmp, glm::vec3(0, 0.49f, 0));
+                        tmp = glm::rotate(tmp, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+                        tmp = glm::rotate(tmp, glm::radians(45.0f), glm::vec3(0, 0, 1));
+                        tmp = glm::scale(tmp, glm::vec3(0.005f));
+                        draw_obj(renderer, textureShader, tmp, view, lightPos, camera.Position, bicycle);
                         break;
                     }
                     case Map::WALL: {
-                        model = glm::translate(model, glm::vec3(0, 0, 1.0f));
+                        model = glm::translate(model, glm::vec3(0, 1.0f, 0));
                         draw_cube_texture(renderer, textureShader, model, view, lightPos, camera.Position, wall_cube);
                     }
                 }
@@ -264,24 +286,22 @@ void update_light(glm::vec3 &lightPos, GLFWwindow *window, float dt) {
     glm::vec3 &pos = lightPos;
 
     // in degrees
-    static glm::vec2 EXTENT = { 170, 10 };
     static float INCREMENT = 25;
     static float curr_angle = 90;
 
     float change = 0;
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        change = curr_angle >= EXTENT.x ? change : INCREMENT * dt;
+        change = INCREMENT * dt;
     } else if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        change = curr_angle <= EXTENT.y ? change : -INCREMENT * dt;
+        change = -INCREMENT * dt;
     }
 
     curr_angle += change;
 
-    pos = rotate(identity<mat4>(), radians(change), { 0, 0, 1 }) * vec4(pos, 1);
+    pos = rotate(identity<mat4>(), radians(change), { 0, 1, 0 }) * vec4(pos, 1);
 }
 
 void run_aStar() {
     Map& instance = Map::getInstance();
     instance.solve_AStar();
-    return;
 }

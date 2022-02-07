@@ -63,13 +63,16 @@ private:
         }
         // 添加墙体
         for (int i = 4; i < 12; ++i) {
-            data_[i][12]->bObstacle = true;
-            data_[i][12]->type = WALL;
+            data_[i][11]->bObstacle = true;
+            data_[i][11]->type = WALL;
         }
-
         for (int i = 6; i < 12; ++i) {
             data_[11][i]->bObstacle = true;
             data_[11][i]->type = WALL;
+        }
+        for (int i = 3; i < 12; ++i) {
+            data_[i][5]->bObstacle = true;
+            data_[i][5]->type = WALL;
         }
         nodeStart = data_[2][LENGTH / 2];
         nodeStart->type = START;
@@ -97,6 +100,10 @@ public:
 
     std::vector<std::vector<Node>> &data() {
         return data_;
+    }
+
+    std::pair<int, int> getStart() {
+        return std::pair<int, int>(nodeStart->x, nodeStart->y);
     }
 
     void solve_AStar() {
@@ -152,6 +159,10 @@ public:
 
         // 画线
         auto curr = nodeEnd->parent;
+        // 没有结果
+        if (curr == nullptr) {
+            return;
+        }
         while (curr != nodeStart) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             curr->type = ACTUAL_ROAD;

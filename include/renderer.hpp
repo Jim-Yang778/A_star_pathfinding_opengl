@@ -7,7 +7,7 @@
 #include "shader.hpp"
 #include "map.hpp"
 
-const glm::vec3 dirLight(0.0f, 0.0f, -1.0f);
+const glm::vec3 dirLight(0.0f, -1.0f, 0.0f);
 
 struct renderer_t {
     glm::mat4 projection;
@@ -22,9 +22,10 @@ renderer_t make_renderer(const glm::mat4 &projection);
  * @param renderer renderer_t类型的结构体，存着渲染需要的数据
  * @param model 模型矩阵
  * @param view 观察矩阵
+ * @param lightPos 点光源位置
+ * @param viewPos 摄像机位置
  * @param m 模型本身
  */
-
 void draw_light(const renderer_t &renderer,
                 const Shader &shader,
                 const glm::mat4 &model,
@@ -46,5 +47,13 @@ void draw_cube_texture(const renderer_t &renderer,
                        const std::vector<glm::vec3> &lightPos,
                        const glm::vec3 &viewPos,
                        const model_t &m);
+
+void draw_obj(const renderer_t &renderer,
+              const Shader &shader,
+              const glm::mat4 &model,
+              const glm::mat4 &view,
+              const std::vector<glm::vec3> &lightPos,
+              const glm::vec3 &viewPos,
+              const model_t &m);
 
 #endif //LEARN_OPENGL_RENDERER_HPP
