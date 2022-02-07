@@ -22,7 +22,7 @@
 
 <img src="/res/file_ext/aStar.gif"/>
 
-
+<img src="/res/file_ext/aStar-fps.gif"/>
 
 ## TODO部分
 
