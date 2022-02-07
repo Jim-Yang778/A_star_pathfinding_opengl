@@ -78,17 +78,6 @@ private:
         nodeStart->type = START;
         nodeEnd = data_[WIDTH - 3][LENGTH / 2];
         nodeEnd->type = END;
-        for (auto &line : data_) {
-            for (auto &each : line) {
-                if (!each->bObstacle) {
-                    std::cout << "1 ";
-                } else {
-                    std::cout << "0 ";
-                }
-            }
-            std::cout << "\n";
-        }
-
     }
 public:
     Map(const Map &other) = delete;
