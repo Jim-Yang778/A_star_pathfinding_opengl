@@ -1,6 +1,8 @@
 # A*寻路算法可视化 OpenGL实现
 
-基本介绍
+## 基本介绍
+
+### 算法部分
 
 实现了网格图中的A*寻路算法的可视化
 
@@ -8,7 +10,9 @@
 
 
 
-OpenGL部分 根据https://learnopengl-cn.github.io/中前三章的内容学习并实现
+### OpenGL部分 
+
+根据 https://learnopengl-cn.github.io/ 中前三章的内容学习并实现
 
 完成了：
 
@@ -20,7 +24,7 @@ OpenGL部分 根据https://learnopengl-cn.github.io/中前三章的内容学习�
 
 
 
-TODO部分
+## TODO部分
 
 * 代码中实现各节点(node)的层级结构
 
