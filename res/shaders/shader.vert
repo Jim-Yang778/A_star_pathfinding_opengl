@@ -5,6 +5,7 @@ layout (location = 2) in vec3 aNormal;
 
 out vec3 Normal;
 out vec3 FragPos;
+out vec2 TexCoords;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -17,4 +18,5 @@ void main() {
     Normal = mat3(transpose(inverse(model))) * aNormal;
     // 顶点位置属性乘以模型矩阵得到顶点在世界空间的坐标
     FragPos = vec3(model * aPos);
+    TexCoords = aTexCoord;
 }

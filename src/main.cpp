@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <thread>
 #include "shader.hpp"
 #include "camera.hpp"
 #include "model.hpp"
@@ -15,11 +16,13 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+void update_light(glm::vec3 &lightPos, GLFWwindow *window, float dt);
+void run_aStar();
 
 // settings
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1200;
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
+Camera camera(glm::vec3(float(WIDTH) / 2, float(LENGTH) / 2, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -28,6 +31,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+std::vector<glm::vec3> lightPos{glm::vec3(WIDTH / 2, LENGTH, 5.0f), glm::vec3(0)};
 
 int main()
 {
@@ -45,8 +49,8 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    if (window == nullptr)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -71,136 +75,54 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Shader ourShader("res/shaders/shader.vert", "res/shaders/shader.frag");
+
+    Shader colorShader("res/shaders/shader.vert", "res/shaders/shader_color.frag");
+    Shader textureShader("res/shaders/shader.vert", "res/shaders/shader_texture.frag");
     Shader lightCubeShader("res/shaders/light_cube.vert", "res/shaders/light_cube.frag");
-    // 顶点数据
-    float vertices[] = {
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f, 0.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
 
-            -0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
+    model_t wall_cube = generate_cube({0.5f, 0.5f, 0.5f},
+                                      true,
+                                      {"res/textures/container2.png",
+                                  "res/textures/container2_specular.png"});
+    model_t unvisited_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                           false,
+                                           {},
+                                           glm::vec4(0.8, 0.75, 0.5, 1));
+    model_t visited_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                      false,
+                                      {},
+                                      glm::vec4(0, 0.8, 0.5, 1));
+    model_t road_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                         false,
+                                         {},
+                                         glm::vec4(1, 0.0, 0.0, 1));
+    model_t start_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                      false,
+                                      {},
+                                      glm::vec4());
+    model_t end_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                      false,
+                                      {},
+                                      glm::vec4(0.8, 0, 0, 1));
+    model_t light_sphere = generate_sphere({32, 32},
+                                           glm::vec4(1, 1, 1, 1));
+    model_t light_cube = generate_cube({0.49f, 0.49f, 0.49f},
+                                         false,
+                                         {},
+                                         glm::vec4(1, 0.4, 0.8, 1));
 
-            -0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-
-            -0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,0.0f, 1.0f,
-            0.5f,  0.5f, -0.5f,  0.75f,0.75f, 0.75f,1.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.75f,0.75f, 0.75f,0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  0.75f,0.0f, 0.75f,0.0f, 1.0f
-    };
-//    // 使用索引缓冲避免顶点浪费
-//    unsigned int indices[] = { // 注意索引从0开始!
-//            0, 1, 3, // first triangle
-//            1, 2, 3  // second triangle
-//    };
-
-    glm::vec3 cubePositions[] = {
-            glm::vec3( 0.0f,  0.0f,  0.0f),
-            glm::vec3( 2.0f,  5.0f, -15.0f),
-            glm::vec3(-1.5f, -2.2f, -2.5f),
-            glm::vec3(-3.8f, -2.0f, -12.3f),
-            glm::vec3( 2.4f, -0.4f, -3.5f),
-            glm::vec3(-1.7f,  3.0f, -7.5f),
-            glm::vec3( 1.3f, -2.0f, -2.5f),
-            glm::vec3( 1.5f,  2.0f, -2.5f),
-            glm::vec3( 1.5f,  0.2f, -1.5f),
-            glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
-
-//    GLuint VBO, VAO;
-//    GLuint EBO;
-//    // 生成VAO, VBO
-//    glGenVertexArrays(1, &VAO);
-//    glGenBuffers(1, &VBO);
-//    glGenBuffers(1, &EBO);
-//    // 绑定VAO
-//    glBindVertexArray(VAO);
-//    // 把顶点数组复制到缓冲中供OpenGL使用
-//    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-//    // 复制我们的索引数组到一个索引缓冲中，供OpenGL使用
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-//    // 设置顶点属性指针
-//    // 第一个0 是我们希望把数据传递到这一个顶点属性中，所以这里我们传入0(shader.vert中的aPos)
-//    // position attribute
-//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-//    glEnableVertexAttribArray(0);
-//    // color attribute
-//    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-//    glEnableVertexAttribArray(1);
-//    // texture coord attribute
-//    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-//    glEnableVertexAttribArray(2);
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-//    glBindVertexArray(0);
-
-    model_t cube = generate_cube(1, 1, 1, false, "res/textures/awesomeface.png");
-    model_t light_cube = generate_cube(1, 1, 1, false, "");
-
-//    GLuint texture1;
-//    // 对texture 1
-//    glGenTextures(1, &texture1);
-//    glBindTexture(GL_TEXTURE_2D, texture1);
-//    // set the textures wrapping parameters
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set textures wrapping to GL_REPEAT (default wrapping method)
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//    // load image, create textures and generate mipmaps
-//    int width, height, nrChannels;
-//    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-//    unsigned char *data = stbi_load("res/textures/wall.jpg", &width, &height, &nrChannels, 0);
-//    if (data)
-//    {
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-//        glGenerateMipmap(GL_TEXTURE_2D);
-//    }
-//    else
-//    {
-//        std::cerr << "Failed to load textures" << std::endl;
-//    }
-//    stbi_image_free(data);
-//    ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
-//    // either set it manually like so:
-//    ourShader.setInt("texture1", 0);
     renderer_t renderer = make_renderer(glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f));
-    glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+    std::thread th(run_aStar);
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
 
-        float currentFrame = static_cast<float>(glfwGetTime());
+        auto currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -210,41 +132,74 @@ int main()
 
         // render
         // ------
-//        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        ourShader.use();
         // 观察矩阵
         glm::mat4 view = camera.GetViewMatrix();
         // 投影矩阵
         renderer.projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
         // 模型矩阵
         glm::mat4 model = glm::mat4(1.0f);
-        draw_cube_normal(renderer, ourShader, model, view, lightPos, camera.Position, cube);
 
-        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
-        lightCubeShader.use(); // 用了别的shader别忘了改use
+        for (size_t i = 0; i < LENGTH; ++i) {
+            for (size_t j = 0; j < WIDTH; ++j) {
+                // calculate the model matrix for each object and pass it to shader before drawing
+                model = glm::mat4(1.0f);
+                glm::vec3 cubePositions{i, j, 0};
+                model = glm::translate(model, cubePositions);
+                switch (instance.data()[i][j]->type) {
+                    case Map::ROAD_UNVISITED: {
+                        draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, unvisited_cube);
+                        break;
+                    }
+                    case Map::ROAD_VISITED: {
+                        draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, visited_cube);
+                        break;
+                    }
+                    case Map::ACTUAL_ROAD: {
+                        draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, road_cube);
+                        break;
+                    }
+                    case Map::START: {
+                        glm::mat4 tmp = model;
+                        tmp = glm::translate(tmp, glm::vec3(0, 0, 1.0f));
+                        lightPos[1] = cubePositions + glm::vec3(0, 0, 1.0f);
+                        tmp = glm::scale(tmp, glm::vec3(0.4f));
+                        draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, start_cube);
+                        draw_light(renderer, lightCubeShader, tmp, view, light_cube);
+                        break;
+                    }
+                    case Map::END: {
+                        draw_cube_color(renderer, colorShader, model, view, lightPos, camera.Position, end_cube);
+                        break;
+                    }
+                    case Map::WALL: {
+                        model = glm::translate(model, glm::vec3(0, 0, 1.0f));
+                        draw_cube_texture(renderer, textureShader, model, view, lightPos, camera.Position, wall_cube);
+                    }
+                }
+            }
+        }
+
+        lightCubeShader.use();
         model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-        draw_cube_light(renderer, lightCubeShader, model, view, light_cube);
+        model = glm::translate(model, lightPos[0]);
+        draw_light(renderer, lightCubeShader, model, view, light_sphere);
+        update_light(lightPos[0], window, deltaTime);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    destroy_obj(cube);
-//    glDeleteVertexArrays(1, &VAO);
-//    glDeleteBuffers(1, &VBO);
-//    glDeleteBuffers(1, &EBO);
-//    glGenTextures(1, &texture1);
-//    glGenTextures(1, &texture2);
+    destroy_obj(wall_cube);
+    destroy_obj(unvisited_cube);
+    destroy_obj(light_sphere);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
+    th.join();
     return 0;
 }
 
@@ -301,4 +256,32 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void update_light(glm::vec3 &lightPos, GLFWwindow *window, float dt) {
+    using namespace glm;
+
+    glm::vec3 &pos = lightPos;
+
+    // in degrees
+    static glm::vec2 EXTENT = { 170, 10 };
+    static float INCREMENT = 25;
+    static float curr_angle = 90;
+
+    float change = 0;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        change = curr_angle >= EXTENT.x ? change : INCREMENT * dt;
+    } else if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        change = curr_angle <= EXTENT.y ? change : -INCREMENT * dt;
+    }
+
+    curr_angle += change;
+
+    pos = rotate(identity<mat4>(), radians(change), { 0, 0, 1 }) * vec4(pos, 1);
+}
+
+void run_aStar() {
+    Map& instance = Map::getInstance();
+    instance.solve_AStar();
+    return;
 }

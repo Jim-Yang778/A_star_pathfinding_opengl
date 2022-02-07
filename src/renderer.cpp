@@ -1,3 +1,4 @@
+#include <stack>
 #include "renderer.hpp"
 
 renderer_t make_renderer(const glm::mat4 &projection) {
@@ -6,57 +7,103 @@ renderer_t make_renderer(const glm::mat4 &projection) {
     return renderer;
 }
 
-//void draw_model(const renderer_t &renderer,
-//                Shader &shader,
-//                const glm::mat4 &model,
-//                const glm::mat4 &view,
-//                const model_t &m) {
-//
-//    shader.setMat4("model", model);
-//    shader.setMat4("view", view);
-//    shader.setMat4("projection", renderer.projection);
-//
-//    for (const mesh_t &mesh: m.meshes) {
-//        if (mesh.material_id != 0) {
-//            const material_t &mtl = m.materials[0];
-//            glBindTexture(GL_TEXTURE_2D, mtl.texture);
-//            shader.setFloat("u_tex_factor", mtl.texture == 0 ? 1.f : 0.f);
-//            // 第一层是0
-//            shader.setInt("texture1", 0);
-//            shader.setVec4("u_color", glm::vec4(1, 0.35, 0.5, 1));
-//        } else {
-//            shader.setFloat("u_tex_factor", 0.0f);
-//            shader.setVec4("u_color", glm::vec4(1, 1, 1, 1));
-//        }
-//
-//        glBindVertexArray(mesh.vao);
-//        glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-//        glDrawArrays(GL_TRIANGLES, 0, mesh.nverts);
-//
-//        glBindVertexArray(0);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-//    }
-//}
-
-void draw_cube_normal(const renderer_t &renderer,
-                Shader &shader,
+void draw_cube_color(const renderer_t &renderer,
+                const Shader &shader,
                 const glm::mat4 &model,
                 const glm::mat4 &view,
-                const glm::vec3 &lightPos,
-                      const glm::vec3 &viewPos,
+                const std::vector<glm::vec3> &lightPos,
+                const glm::vec3 &viewPos,
                 const model_t &m) {
+
+    shader.use();
 
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", renderer.projection);
 
     for (const mesh_t &mesh: m.meshes) {
+        const material_t &mtl = m.materials[0];
         shader.setVec3("viewPos", viewPos);
-        shader.setVec3("lightPos", lightPos);
-        shader.setVec3("lightColor", glm::vec3(1, 1, 1));
-        shader.setVec3("objectColor", glm::vec3(1, 0.35, 0.2));
+        shader.setVec3("material.ambient",  mtl.color);
+        shader.setVec3("material.diffuse",  mtl.color);
+        shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+        shader.setFloat("material.shininess", 16.0f);
+        // 点光源_1
+        shader.setVec3("pointLight[0].position", lightPos[0]);
+        shader.setVec3("pointLight[0].ambient", 0.2f, 0.2f, 0.2f);
+        shader.setVec3("pointLight[0].diffuse", 0.5f, 0.5f, 0.5f);
+        shader.setVec3("pointLight[0].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLight[0].constant",  1.0f); //点光源衰减相关
+        shader.setFloat("pointLight[0].linear",    0.09f);
+        shader.setFloat("pointLight[0].quadratic", 0.032f);
+        // 点光源_2
+        shader.setVec3("pointLight[1].position", lightPos[1]);
+        shader.setVec3("pointLight[1].ambient", 0.2f, 0.04f, 0.16f); // 根据两个点光源进行修改..
+        shader.setVec3("pointLight[1].diffuse", 0.5f, 0.2f, 0.4f);
+        shader.setVec3("pointLight[1].specular", 1.0f, 0.4f, 0.8f);
+        shader.setFloat("pointLight[1].constant",  1.0f); //点光源衰减相关
+        shader.setFloat("pointLight[1].linear",    0.09f);
+        shader.setFloat("pointLight[1].quadratic", 0.032f);
+        // 直线光
+        shader.setVec3("dirLight.direction", dirLight);
+        shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
 
+        glBindVertexArray(mesh.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+        glDrawArrays(GL_TRIANGLES, 0, mesh.nverts);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+}
+
+void draw_cube_texture(const renderer_t &renderer,
+                       const Shader &shader,
+                       const glm::mat4 &model,
+                       const glm::mat4 &view,
+                       const std::vector<glm::vec3> &lightPos,
+                       const glm::vec3 &viewPos,
+                       const model_t &m) {
+    shader.use();
+
+    shader.setMat4("model", model);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", renderer.projection);
+
+    for (const mesh_t &mesh: m.meshes) {
+        const material_t &mtl = m.materials[0];
+        shader.setVec3("viewPos", viewPos);
+        // 纹理相关
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mtl.diffuse_map);
+        shader.setInt("material.diffuse", 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, mtl.specular_map);
+        shader.setInt("material.specular", 1);
+        shader.setFloat("material.shininess", 64.0f);
+        // 点光源_1
+        shader.setVec3("pointLight[0].position", lightPos[0]);
+        shader.setVec3("pointLight[0].ambient", 0.2f, 0.2f, 0.2f);
+        shader.setVec3("pointLight[0].diffuse", 0.5f, 0.5f, 0.5f);
+        shader.setVec3("pointLight[0].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLight[0].constant",  1.0f); //点光源衰减相关
+        shader.setFloat("pointLight[0].linear",    0.09f);
+        shader.setFloat("pointLight[0].quadratic", 0.032f);
+        // 点光源_2
+        shader.setVec3("pointLight[1].position", lightPos[1]);
+        shader.setVec3("pointLight[1].ambient", 0.2f, 0.04f, 0.16f);
+        shader.setVec3("pointLight[1].diffuse", 0.5f, 0.5f, 0.5f);
+        shader.setVec3("pointLight[1].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLight[1].constant",  1.0f); //点光源衰减相关
+        shader.setFloat("pointLight[1].linear",    0.09f);
+        shader.setFloat("pointLight[1].quadratic", 0.032f);
+        // 直线光
+        shader.setVec3("dirLight.direction", dirLight);
+        shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
         glBindVertexArray(mesh.vao);
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
         glDrawArrays(GL_TRIANGLES, 0, mesh.nverts);
@@ -67,18 +114,20 @@ void draw_cube_normal(const renderer_t &renderer,
     }
 }
 
-void draw_cube_light(const renderer_t &renderer,
-                Shader &shader,
+void draw_light(const renderer_t &renderer,
+                const Shader &shader,
                 const glm::mat4 &model,
                 const glm::mat4 &view,
                 const model_t &m) {
+
+    shader.use();
 
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", renderer.projection);
 
     for (const mesh_t &mesh: m.meshes) {
-        shader.setVec4("u_color", glm::vec4(1, 1, 1, 1));
+        shader.setVec4("u_color", m.materials[0].color);
 
         glBindVertexArray(mesh.vao);
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
@@ -86,6 +135,5 @@ void draw_cube_light(const renderer_t &renderer,
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }

@@ -21,8 +21,9 @@ find_package(glad REQUIRED HINTS ${PROJECT_SOURCE_DIR}/lib)
 find_package(glfw3 REQUIRED HINTS ${PROJECT_SOURCE_DIR}/lib)
 find_package(glm REQUIRED HINTS ${PROJECT_SOURCE_DIR}/lib)
 find_package(stb REQUIRED HINTS ${PROJECT_SOURCE_DIR}/lib)
+find_package(tinyobjloader REQUIRED HINTS ${PROJECT_SOURCE_DIR}/lib)
 
-set(LIBS glad::glad glm::glm glfw stb)
+set(LIBS glad::glad glm::glm glfw stb tinyobjloader::tinyobjloader)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 

@@ -5,8 +5,7 @@
 mesh_t make_mesh(
         const std::vector<glm::vec4> &positions,
         const std::vector<glm::vec2> &texcoords,
-        const std::vector<glm::vec3> &normals,
-        int material_id
+        const std::vector<glm::vec3> &normals
 ) {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -44,7 +43,7 @@ mesh_t make_mesh(
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    return mesh_t{ vao, vbo,  (GLuint)positions.size(), material_id };
+    return mesh_t{ vao, vbo,  (GLuint)positions.size() };
 }
 
 GLuint load_texture(const std::string &path) {
@@ -64,14 +63,13 @@ GLuint load_texture(const std::string &path) {
     return tex;
 }
 
-model_t generate_cube(const float &width,
-                      const float &height,
-                      const float &depth,
+model_t generate_cube(const volume_param_t &geo_params,
                       const bool &tex_cover,
-                      const std::string& path) {
-    float w = width;
-    float h = height;
-    float d = depth;
+                      const material_param_t &mat_params,
+                      glm::vec4 color) {
+    float w = geo_params.width;
+    float h = geo_params.height;
+    float d = geo_params.depth;
 
     float hw, hh, hd;
     if (tex_cover) {
@@ -163,24 +161,23 @@ model_t generate_cube(const float &width,
     }
 
     std::vector<mesh_t> meshes;
-    if (tex_cover) {
-        meshes.emplace_back(make_mesh(positions, texcoords, normals, 1));
-    } else {
-        meshes.emplace_back(make_mesh(positions, texcoords, normals, 0));
-    }
+    meshes.emplace_back(make_mesh(positions, texcoords, normals));
 
     std::vector<material_t> materials;
-    GLuint tex = 0;
     if (tex_cover) {
-        tex = load_texture(path);
-        materials.emplace_back(material_t { tex, glm::vec4(1, 1, 1, 1) });
+        GLuint diffuse_map = load_texture(mat_params.diffuse_map);
+        GLuint specular_map = load_texture(mat_params.specular_map);
+        materials.emplace_back(material_t { glm::vec4(1), diffuse_map, specular_map });
     } else {
-        materials.emplace_back(material_t { tex, glm::vec4(1, 1, 1, 1) });
+        materials.emplace_back(material_t { color });
     }
     return { meshes, materials };
 }
 
-model_t generate_sphere(const int &slices, const int &stacks) {
+model_t generate_sphere(const sphere_param_t &geo_params,
+                        glm::vec4 color) {
+    int stacks = geo_params.stacks;
+    int slices = geo_params.slices;
     std::vector<vertex_t> sverts;
     for (int i = 0; i <= stacks; ++i) {
         double phi = glm::pi<double>() * i / (double) stacks;
@@ -216,10 +213,10 @@ model_t generate_sphere(const int &slices, const int &stacks) {
     }
 
     std::vector<mesh_t> meshes;
-    meshes.emplace_back(make_mesh(positions, texcoords, normals, 0));
+    meshes.emplace_back(make_mesh(positions, texcoords, normals));
 
     std::vector<material_t> materials;
-    materials.emplace_back(material_t { 0, glm::vec4(1, 1, 1, 1) });
+    materials.emplace_back(material_t { color });
 
     return { meshes, materials };
 }
@@ -234,7 +231,9 @@ void destroy_obj(model_t &m) {
     }
 
     for (material_t &mat: m.materials) {
-        glDeleteTextures(1, &mat.texture);
-        mat.texture = 0;
+        glDeleteTextures(1, &mat.diffuse_map);
+        glDeleteTextures(1, &mat.specular_map);
+        mat.diffuse_map = 0;
+        mat.specular_map = 0;
     }
 }
