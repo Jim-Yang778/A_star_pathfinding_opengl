@@ -20,8 +20,8 @@ void update_light(glm::vec3 &lightPos, GLFWwindow *window, float dt);
 void run_aStar();
 
 // settings
-const unsigned int SCR_WIDTH = 1920;
-const unsigned int SCR_HEIGHT = 1080;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 Camera camera(glm::vec3(float(WIDTH) / 2, 25.0f, float(LENGTH) / 2));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;

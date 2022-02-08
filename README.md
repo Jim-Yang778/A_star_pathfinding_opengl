@@ -22,6 +22,8 @@
 
 <img src="/res/file_ext/aStar.gif"/>
 
+<img src="/res/file_ext/aStar-fps.gif"/>
+
 ## TODO部分
 
 * 代码中实现各节点(node)的层级结构
