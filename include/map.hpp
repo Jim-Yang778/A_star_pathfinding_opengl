@@ -115,7 +115,7 @@ public:
         std::priority_queue<Node, std::vector<Node>, decltype(cmp)> openSet(cmp);
         openSet.emplace(nodeStart);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         while (!openSet.empty() && nodeCurrent != nodeEnd) {
             while (!openSet.empty() && openSet.top()->bVisited) {
                 openSet.pop();
