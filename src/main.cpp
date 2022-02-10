@@ -117,6 +117,8 @@ int main()
     model_t bicycle = load_obj("res/obj/Bicycle/10489_bicycle_L2.obj");
 
     renderer_t renderer = make_renderer(glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f));
+
+    // 开启A*寻路算法线程
     std::thread th(run_aStar);
     // render loop
     // -----------
@@ -214,13 +216,19 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    destroy_obj(start_cube);
+    destroy_obj(end_cube);
+    destroy_obj(light_cube);
     destroy_obj(wall_cube);
+    destroy_obj(visited_cube);
     destroy_obj(unvisited_cube);
     destroy_obj(light_sphere);
+    destroy_obj(bicycle);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
+    // 等待寻路算法线程结束
     th.join();
     return 0;
 }

@@ -263,11 +263,8 @@ model_t load_obj(const std::string &path) {
         GLuint tex = mat.diffuse_texname.empty() ? 0 : load_texture(mtl_base + mat.diffuse_texname);
         GLuint spec = mat.specular_texname.empty() ? 0 : load_texture(mtl_base + mat.specular_texname);
         glm::vec4 color = { mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1 };
-        glm::vec3 diffuse = { mat.diffuse[0], mat.diffuse[1], mat.diffuse[2] };
-        glm::vec3 specular = { mat.specular[0], mat.specular[1], mat.specular[2] };
-        glm::vec3 emission = { mat.emission[0], mat.emission[1], mat.emission[2] };
 
-        mats.emplace_back(material_t{ color, tex, spec, diffuse, specular, emission });
+        mats.emplace_back(material_t{ color, tex, spec });
     }
 
     return model_t{ meshes, mats };

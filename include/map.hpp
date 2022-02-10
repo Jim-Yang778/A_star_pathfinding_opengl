@@ -11,6 +11,9 @@
 const size_t WIDTH = 16;
 const size_t LENGTH = 16;
 
+/*
+ * 地图类 单例模式实现
+ */
 class Map {
 public:
     enum type_t {
@@ -92,16 +95,18 @@ public:
     }
 
     std::pair<int, int> getStart() {
-        return std::pair<int, int>(nodeStart->x, nodeStart->y);
+        return std::pair<int, int>{nodeStart->x, nodeStart->y};
     }
 
+    // 算法来源：https://www.youtube.com/watch?v=icZj67PTFhc
     void solve_AStar() {
+        // 欧几里得距离
         auto distance = [](const Node& a, const Node& b) {
             return sqrtf(pow((a->x - b->x), 2) + pow((a->y - b->y), 2));
         };
 
         // 计算启发值
-        auto heuristic = [distance](Node a, Node b) {
+        auto heuristic = [distance](const Node& a, const Node& b) {
             return distance(a, b);
         };
 

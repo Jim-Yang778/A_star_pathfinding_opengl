@@ -34,9 +34,6 @@ struct material_t {
     glm::vec4 color;
     GLuint diffuse_map = 0;
     GLuint specular_map = 0;
-    glm::vec3 diffuse = {1,1,1};
-    glm::vec3 specular = {1,1,1};
-    glm::vec3 emissive = {1,1,1};
 };
 
 struct model_t {
