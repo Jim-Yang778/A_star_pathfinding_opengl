@@ -79,11 +79,12 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
+    // 三种着色器组合
     Shader colorShader("res/shaders/shader.vert", "res/shaders/shader_color.frag");
     Shader textureShader("res/shaders/shader.vert", "res/shaders/shader_texture.frag");
     Shader lightCubeShader("res/shaders/light_cube.vert", "res/shaders/light_cube.frag");
 
+    // 定义所有物体（形状，是否有纹理覆盖，颜色）
     model_t wall_cube = generate_cube({0.5f, 0.5f, 0.5f},
                                       true,
                                       {"res/textures/container2.png",
@@ -120,6 +121,8 @@ int main()
 
     // 开启A*寻路算法线程
     std::thread th(run_aStar);
+    // 主调线程继续运行，被调线程驻留后台运行，主调线程无法再取得该被调线程的控制权。当主调线程结束时，由运行时库负责清理与被调线程相关的资源
+    th.detach();
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -204,8 +207,7 @@ int main()
                 }
             }
         }
-
-        lightCubeShader.use();
+        // 渲染发光球体
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos[0]);
         draw_light(renderer, lightCubeShader, model, view, light_sphere);
@@ -228,8 +230,8 @@ int main()
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
-    // 等待寻路算法线程结束
-    th.join();
+//    主调线程阻塞，等待被调线程终止，然后主调线程回收被调线程资源，并继续运行；
+//    th.join();
     return 0;
 }
 

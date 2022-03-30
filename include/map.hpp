@@ -29,10 +29,10 @@ private:
         int x = 0;							// 节点坐标
         int y = 0;
         bool bObstacle = false;
-        bool bVisited = false;			// Have we searched this node before?
+        bool bVisited = false;			    // 该node是否在CloseSet中
         type_t type = ROAD_UNVISITED;
-        float fGlobalGoal = INFINITY;				// Distance to goal so far
-        float fLocalGoal = INFINITY;				// Distance to goal if we took the alternative route
+        float fGlobalGoal = INFINITY;				// 距离原点的距离 + 启发值（距离终点的直线距离）
+        float fLocalGoal = INFINITY;				// 当前节点到起点的代价
         std::shared_ptr<node> parent = nullptr;
         std::vector<std::shared_ptr<node>> vecNeighbours;
         node(int x, int y, bool is_obstacle) : x(x), y(y), bObstacle(is_obstacle) {};
@@ -122,10 +122,13 @@ public:
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         while (!openSet.empty() && nodeCurrent != nodeEnd) {
+            // 推出所有已经遍历过的点
             while (!openSet.empty() && openSet.top()->bVisited) {
                 openSet.pop();
             }
+            // 推完之后OpenSet为空，说明没有node需要被遍历了，就退出循环
             if (openSet.empty()) break;
+
 
             nodeCurrent = openSet.top();
             nodeCurrent->bVisited = true;
@@ -139,8 +142,10 @@ public:
                     openSet.emplace(nodeNeighbor);
                 }
                 // 计算当前neighbor节点(是currentNode的邻居的条件下)的g(n)值 [f(n) = g(n) + h(n)]
-                auto fPossiblyLowerGoal = nodeCurrent->fLocalGoal + distance(nodeCurrent, nodeNeighbor);
+                // 表示当前点到起点的代价
+                auto fPossiblyLowerGoal = nodeCurrent->fLocalGoal + distance(nodeCurrent, nodeNeighbor); //第二项都是1
                 // 如果当前新值比nodeNeighbor原来的local值小，更新nodeNeighbor的local值和他的parent
+                // 即，如果从这条路经到当前点时，当前点到起点的代价更小，那么肯定是更小的更好
                 if (fPossiblyLowerGoal < nodeNeighbor->fLocalGoal) {
                     nodeNeighbor->parent = nodeCurrent;
                     nodeNeighbor->fLocalGoal = fPossiblyLowerGoal;

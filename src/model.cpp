@@ -143,7 +143,7 @@ model_t generate_cube(const volume_param_t &geo_params,
     std::vector<glm::vec4> positions;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec3> normals;
-
+    // 使用lambda函数 插入 position, texcoords, normals等一系列值
     auto push_vert = [&](GLuint i) {
         const auto& v = verts[i];
         positions.emplace_back(v.pos, 1);

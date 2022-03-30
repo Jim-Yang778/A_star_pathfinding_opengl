@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 gl_FragColor;
+out vec4 FragColor;
 
 in vec3 Normal;
 in vec3 FragPos;
@@ -70,7 +70,7 @@ void main() {
     }
     // 第三阶段：聚光
 //    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
-    gl_FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, 1.0);
 }
 
 // 平行光计算

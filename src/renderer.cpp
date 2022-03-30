@@ -7,6 +7,7 @@ renderer_t make_renderer(const glm::mat4 &projection) {
     return renderer;
 }
 
+// 渲染带颜色的方块
 void draw_cube_color(const renderer_t &renderer,
                 const Shader &shader,
                 const glm::mat4 &model,
@@ -42,7 +43,7 @@ void draw_cube_color(const renderer_t &renderer,
         shader.setVec3("pointLight[1].ambient", 0.0f,0.134f,0.082f);
         shader.setVec3("pointLight[1].diffuse", 0.0f, 0.335f, 0.205f);
         shader.setVec3("pointLight[1].specular", 0.0f,0.67f,0.41f);
-        //////////////////////
+
         shader.setFloat("pointLight[1].constant",  1.0f); //点光源衰减相关
         shader.setFloat("pointLight[1].linear",    0.09f);
         shader.setFloat("pointLight[1].quadratic", 0.032f);
@@ -61,6 +62,7 @@ void draw_cube_color(const renderer_t &renderer,
     }
 }
 
+// 渲染有纹理的方块，本项目中特指墙体
 void draw_cube_texture(const renderer_t &renderer,
                        const Shader &shader,
                        const glm::mat4 &model,
@@ -116,6 +118,7 @@ void draw_cube_texture(const renderer_t &renderer,
     }
 }
 
+// 渲染发光体
 void draw_light(const renderer_t &renderer,
                 const Shader &shader,
                 const glm::mat4 &model,
@@ -140,6 +143,7 @@ void draw_light(const renderer_t &renderer,
     }
 }
 
+// 渲染模型，本项目中特指单车
 void draw_obj(const renderer_t &renderer,
                        const Shader &shader,
                        const glm::mat4 &model,
