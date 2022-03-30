@@ -31,6 +31,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+// 初始化两个点光源位置
 std::vector<glm::vec3> lightPos{glm::vec3(WIDTH / 2, 3.0f, LENGTH), glm::vec3(0)};
 
 int main()
